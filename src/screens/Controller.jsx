@@ -4,20 +4,21 @@ import Home from "./home/Home"
 import BookShow from "./bookshow/BookShow"
 import Confirmation from "./confirmation/Confirmation"
 import Details from "./details/Details"
-import moviesData from './../common/moviesData'
+
+const baseUrl = "http://localhost:8085/api/"
 const Controller = () => {
   return (
     <Router>
       <Switch>
-        <Route exact path="/" render={props => <Home {...props} />} />
+        <Route exact path="/" render={props => <Home {...props}  baseUrl={baseUrl}/>} />
         <Route
-          path="/details/:id"
+          path="/movie/:id"
           component={({ match }) => (
-            <Details match={match} movies={moviesData} />
+            <Details match={match}  baseUrl={baseUrl}/>
           )}
         />
-        <Route path="/bookshow/:id" render={props => <BookShow {...props}/>}/>
-        <Route path="/confirm/:id" render={props => <Confirmation {...props}/>}/>
+        <Route path="/bookshow/:id" render={props => <BookShow {...props} baseUrl={baseUrl}/>}/>
+        <Route path="/confirm/:id" render={props => <Confirmation {...props} baseUrl={baseUrl}/>}/>
       </Switch>
     </Router>
   )

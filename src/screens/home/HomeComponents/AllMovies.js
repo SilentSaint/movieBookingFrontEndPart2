@@ -18,7 +18,7 @@ export default function AllMovies({ movies }) {
         {movies.map(movie => (
           <GridListTile
             component={Link}
-            to={`/details/${movie.id}`}
+            to={`/movie/${movie.id}`}
             key={movie.id}>
             <img src={movie.poster_url} alt={movie.title} />
             <GridListTileBar

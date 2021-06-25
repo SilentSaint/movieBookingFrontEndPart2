@@ -14,7 +14,7 @@ import ArrowBackIosIcon from "@material-ui/icons/ArrowBackIos";
 import YouTube from "react-youtube";
 import Rating from "@material-ui/lab/Rating";
 import StarBorderIcon from "@material-ui/icons/StarBorder";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 const useStyles = makeStyles({
   button: {
@@ -32,14 +32,33 @@ const opts = {
   height: "390",
   width: "100%",
 };
-const Details = ({ match, movies }) => {
+const Details = ({ match, baseUrl }) => {
   const classes = useStyles();
   const [rating, setRating] = useState(0);
-  const movie = movies[`${parseInt(match.params.id.slice(1))}` - 1];
+  const [movie, setMovie] = useState(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const response = await fetch(
+          `${baseUrl}movie/${match.params.id.slice(1)}`
+        );
+        const movieData = await response.json();
+        setMovie(movieData);
+      } catch (e) {
+        console.warn(e);
+      }
+    })();
+  }, []);
+  if (movie === null)
+    return (
+      <React.Fragment>
+        <Header showBookNowButton={true} baseUrl={baseUrl} />
+      </React.Fragment>
+    );
   return (
     <React.Fragment>
-      <Header showBookNowButton={true} />
-
+      <Header showBookNowButton={true} baseUrl={baseUrl} />
       <Button component={Link} to="/" className={classes.button}>
         <ArrowBackIosIcon />
         Back to home

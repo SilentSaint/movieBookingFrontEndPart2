@@ -1,15 +1,11 @@
 import React, { useState, useEffect } from "react";
 import "./Home.css";
 import Header from "./../../common/header/Header";
-import moviesData from "./../../common/moviesData";
 import UpComingMovies from "./HomeComponents/UpcomingMovies";
 import AllMovies from "./HomeComponents/AllMovies";
 import MoviesFilterForm from "./HomeComponents/MoviesFilterForm";
-import genres from "./../../common/genres";
-import artists from "./../../common/artists";
 
-const Home = () => {
-  const [movies, setMovies] = useState(moviesData);
+const Home = ({ baseUrl }) => {
   const [filterFormValues, setFilterFormValues] = useState({
     movieName: "",
     genresList: [],
@@ -17,65 +13,81 @@ const Home = () => {
     releaseDateStart: null,
     releaseDateEnd: null,
   });
+  const [releasedMovies, setReleasedMovies] = useState(null);
+  const [publishedMovies, setPublishedMovies] = useState(null);
+  const [artists, setArtists] = useState(null);
+  const [genres, setGenres] = useState(null);
 
+  useEffect(() => {
+    (async () => {
+      try {
+        const response = await fetch(`${baseUrl}movies?status=PUBLISHED`);
+        const publishedMovies = await response.json();
+        setPublishedMovies(publishedMovies);
+      } catch (e) {
+        console.warn(e);
+      }
+    })();
+    (async () => {
+      try {
+        const response = await fetch(`${baseUrl}movies?status=RELEASED`);
+        const releasedMovies = await response.json();
+        setReleasedMovies(releasedMovies);
+      } catch (e) {
+        console.warn(e);
+      }
+    })();
+    (async () => {
+      try {
+        const response = await fetch(`${baseUrl}genres`);
+        const genres = await response.json();
+        setGenres(genres);
+      } catch (e) {
+        console.warn(e);
+      }
+    })();
+    (async () => {
+      try {
+        const response = await fetch(`${baseUrl}artists`);
+        const artists = await response.json();
+        setArtists(artists);
+      } catch (e) {
+        console.warn(e);
+      }
+    })();
+  }, []);
   const filterList = () => {
-    let finalFilteredMovieList = moviesData;
-    const formValues = { ...filterFormValues };
-    if (formValues.movieName) {
-      finalFilteredMovieList = finalFilteredMovieList.filter(
-        movie =>
-          movie.title.toLowerCase() === formValues.movieName.toLowerCase()
-      );
+    let queryString = "?status=RELEASED";
+    if (filterFormValues.movieName !== "") {
+      queryString += "&title=" + filterFormValues.movieName;
     }
-    if (formValues.genresList.length > 0) {
-      finalFilteredMovieList = finalFilteredMovieList.filter(movie => {
-        for (let i = 0; i < formValues.genresList.length; i++) {
-          if (movie.genres.includes(formValues.genresList[i].name)) return true;
-        }
-        return false;
-      });
+    if (filterFormValues.genresList.length > 0) {
+      queryString += "&genres=" + filterFormValues.genresList.toString();
     }
-    if (formValues.artistsList.length > 0) {
-      finalFilteredMovieList = finalFilteredMovieList.filter(movie => {
-        const fullNameArray = [];
-        movie.artists.forEach(artist =>
-          fullNameArray.push(`${artist.first_name} ${artist.last_name}`)
-        );
-        for (let i = 0; i < formValues.artistsList.length; i++) {
-          if (
-            fullNameArray.includes(
-              `${formValues.artistsList[i].first_name} ${formValues.artistsList[i].last_name}`
-            )
-          )
-            return true;
-        }
-        return false;
-      });
+    if (filterFormValues.artistsList.length > 0) {
+      queryString += "&artists=" + filterFormValues.artistsList.toString();
     }
-    if (formValues.releaseDateStart && formValues.releaseDateEnd) {
-      const releaseDateStart = new Date(formValues.releaseDateStart);
-      const releaseDateEnd = new Date(formValues.releaseDateEnd);
-      finalFilteredMovieList = finalFilteredMovieList.filter(movie => {
-        const movieReleaseDate = new Date(movie.release_date);
-        return (
-          movieReleaseDate >= releaseDateStart &&
-          movieReleaseDate <= releaseDateEnd
-        );
-      });
-    } else if (formValues.releaseDateStart && !formValues.releaseDateEnd) {
-      const releaseDateStart = new Date(formValues.releaseDateStart);
-      finalFilteredMovieList = finalFilteredMovieList.filter(movie => {
-        const movieReleaseDate = new Date(movie.release_date);
-        return movieReleaseDate >= releaseDateStart;
-      });
-    } else if (!formValues.releaseDateStart && formValues.releaseDateEnd) {
-      const releaseDateEnd = new Date(formValues.releaseDateEnd);
-      finalFilteredMovieList = finalFilteredMovieList.filter(movie => {
-        const movieReleaseDate = new Date(movie.release_date);
-        return movieReleaseDate <= releaseDateEnd;
-      });
+    if (filterFormValues.releaseDateStart !== null) {
+      const startDate = new Date(filterFormValues.releaseDateStart);
+      queryString +=
+        "&start_date=" +
+        `${startDate.getFullYear()}-${startDate.getMonth()}-${startDate.getDate()}`;
     }
-    setMovies(finalFilteredMovieList);
+    if (filterFormValues.releaseDateEnd !== null) {
+      const endDate = new Date(filterFormValues.releaseDateEnd);
+      queryString +=
+        "&end_date=" +
+        `${endDate.getFullYear()}-${endDate.getMonth()}-${endDate.getDate()}`;
+    }
+    (async () => {
+      try {
+        const response = await fetch(`${baseUrl}movies${queryString}`);
+        const filterData = await response.json();
+        setReleasedMovies(filterData);
+      } catch (e) {
+        console.warn(e);
+      }
+    })();
   };
 
   const handleSubmit = e => {
@@ -103,19 +115,23 @@ const Home = () => {
 
   return (
     <div>
-      <Header />
+      <Header baseUrl={baseUrl} />
       <div className="upcoming-movies-header">
         <span>Upcoming Movies</span>
       </div>
-      <UpComingMovies movies={moviesData} />
+      {publishedMovies !== null ? (
+        <UpComingMovies movies={publishedMovies} />
+      ) : null}
       <div className="flex-container">
         <div className="left">
-          <AllMovies movies={movies} />
+          {releasedMovies !== null ? (
+            <AllMovies movies={releasedMovies} />
+          ) : null}
         </div>
         <div className="right">
           <MoviesFilterForm
-            genres={genres}
-            artists={artists}
+            genres={genres !== null ? genres : []}
+            artists={artists !== null ? artists : []}
             handleSubmit={handleSubmit}
             handleChange={handleChange}
             handleAutoCompleteChange={handleAutoCompleteChange}
